@@ -1,10 +1,17 @@
 import React from 'react';
-import './App.css';
-import UIThemeProvider from "./components/core/UIThemeProvider";
+import UIThemeProvider from './components/core/UIThemeProvider';
+import CSSReset from './components/base/CSSReset';
+import {BrowserRouter, Route, Switch} from 'react-router-dom';
+import Login from './pages/Login';
 
 function App() {
     return <UIThemeProvider>
-        <h1>Lol</h1>
+        <CSSReset />
+        <BrowserRouter>
+            <Switch>
+                <Route path='/login'><Login /></Route>
+            </Switch>
+        </BrowserRouter>
     </UIThemeProvider>;
 }
 
