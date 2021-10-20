@@ -21,7 +21,7 @@ for (const model of Object.keys(convert)) {
 
 const limiters = {};
 
-function Color(object, model) {
+export default function Color(object, model) {
     if (!(this instanceof Color)) {
         return new Color(object, model);
     }
@@ -478,5 +478,3 @@ function zeroArray(array, length) {
 
     return array;
 }
-
-module.exports = Color;
