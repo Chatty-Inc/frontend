@@ -1,14 +1,15 @@
-import debug from '../logger';
-import {endToEndEncrypt} from '../cryptoBase/endToEnd';
+import debug from '../../dev/logger';
+import {endToEndEncrypt} from '../endToEnd';
 
 /**
  * Make POST request with email and password to authenticate
  * @param {string} email - User email
  * @param {string} password - User password
  * @param {string} captchaToken - reCAPTCHA token
+ * @param {boolean} isNewAcct - Specify true to attempt account creation
  * @returns {boolean} - True if auth succeeded, false otherwise
  */
-export async function login(email: string, password: string, captchaToken: string): Promise<boolean> {
+export async function login(email: string, password: string, captchaToken: string, isNewAcct: boolean = false): Promise<boolean> {
     const baseURL = (process.env.NODE_ENV === 'development' ? '' : '');
 
     const pubResp = await fetch(baseURL + '/pubKey')

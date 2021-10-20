@@ -3,7 +3,7 @@ import styled from "styled-components";
 import {ThemeCtx} from "../core/UIThemeProvider";
 import {ContainerArgs, themeOptions} from "../types";
 import {ElevatedElementProps} from "../ElementProps";
-import Color from '../../vendor/color';
+import Color from '../../utils/vendor/color';
 import {getTextColFromBg} from "../core/utils";
 
 export interface ButtonProps extends ElevatedElementProps, ContainerArgs {

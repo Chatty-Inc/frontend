@@ -1,4 +1,4 @@
-import Color from "../../vendor/color";
+import Color from "../../utils/vendor/color";
 
 /**
  * Get the appropriate text color based on the background.

@@ -1,6 +1,6 @@
 import parseGatewayMsg from "./parse";
 import * as lzString from 'lz-string'
-import debug from "../logger";
+import debug from "../dev/logger";
 
 /**
  * Manages the whole Gateway WebSocket connection, including
@@ -25,6 +25,8 @@ export class WebSocketManager {
     private retryAt = +new Date(); // Time to retry
     private reconnectIntID = 0;
     private readonly reconnectOnFail: boolean;
+    // Stores
+    private promises: Record<string, object> = {};
 
     // Static constants
     static STATE_DC_CONNECTING = 0;
@@ -95,7 +97,6 @@ export class WebSocketManager {
             if (+new Date() - 100 < this.lastConnected) this.failureRetries = this.oldFailRetries;
             if (this.reconnectOnFail && ev.reason !== 'bye' && ev.reason !== 'unauthorized') this.reconnectWithBackoff();
             else this.connState = WebSocketManager.STATE_ERROR_FATAL
-
         }
         this.ws.onerror = err => {
             this.connState = WebSocketManager.STATE_ERROR_RECONNECTING;

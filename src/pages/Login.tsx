@@ -3,10 +3,11 @@ import {ThemeCtx} from '../components/core/UIThemeProvider';
 import OutlinedTextField from '../components/base/OutinedTextField';
 import InputBase from '../components/base/InputBase';
 import Button from '../components/base/Button';
-import {login, logout} from '../auth';
+import {login, logout} from '../cryptoBase/auth';
 import {WebSocketManager} from '../websocketManager';
 import ReCAPTCHA from 'react-google-recaptcha';
-import mainConf from '../config/masterConfig';
+import mainConf from '../dev/config/masterConfig';
+import MainLoadIcon from "../components/complex/MainLoadIcon";
 
 interface LoginState {
     wsState: number;
@@ -16,6 +17,13 @@ interface LoginState {
 }
 
 let ws: WebSocketManager | undefined = undefined;
+
+const humanReadableWSStates = {
+    [WebSocketManager.STATE_CONNECTED]: 'Connected',
+    [WebSocketManager.STATE_DC_CONNECTING]: 'Disconnected, attempting (re)connection',
+    [WebSocketManager.STATE_ERROR_RECONNECTING]: 'Connection error, reconnecting',
+    [WebSocketManager.STATE_ERROR_FATAL]: 'Disconnected, not reconnecting',
+}
 
 /**
  * Login page
@@ -46,14 +54,13 @@ export default class Login extends Component<{}, LoginState> {
             ws = undefined;
         }
 
-        console.log('hereno')
+        console.log('Waiting for captcha')
         if (this.reCaptcha.current?.getValue()) this.reCaptcha.current?.reset()
         const captchaToken = await this.reCaptcha.current?.executeAsync();
         if (!captchaToken) {
             this.setState({loginErr: 'ReCAPTCHA error'});
             return;
         }
-        console.log('hereyes')
 
         const v = await login(this.state.email, this.state.password, captchaToken!);
         if (v && !ws) {
@@ -65,9 +72,10 @@ export default class Login extends Component<{}, LoginState> {
     }
 
     render() {
+
         return <>
             <h1>Login</h1>
-            <h1>Current WebSocket State: {this.state.wsState}</h1>
+            <h1>Current WebSocket State: {humanReadableWSStates[this.state.wsState]}</h1>
 
             <OutlinedTextField>
                 <InputBase placeholder='Email' type='email' value={this.state.email}
@@ -78,8 +86,9 @@ export default class Login extends Component<{}, LoginState> {
                            onChange={e => this.setState({password: e.currentTarget.value})}/>
             </OutlinedTextField>
 
-            <Button filled fullWidth onclick={this.handleLogin}>Login</Button>
-            <Button fullWidth onclick={() => {
+            <Button fullWidth onclick={this.handleLogin}>Login</Button>
+            <Button filled fullWidth onclick={this.handleLogin}>Sign Up</Button>
+            <Button primary='red' fullWidth onclick={() => {
                 if (!ws) {
                     this.setState({loginErr: 'Already logged out'})
                     return;
@@ -97,7 +106,10 @@ export default class Login extends Component<{}, LoginState> {
                 href="https://policies.google.com/terms">Terms of Service</a> apply.
             </small>
 
-            <ReCAPTCHA ref={this.reCaptcha} sitekey={mainConf.reCAPTCHAKey} theme='dark' size='invisible' />
+            <ReCAPTCHA ref={this.reCaptcha} sitekey={mainConf.reCAPTCHAKey}
+                       onErrored={() => this.setState({loginErr: 'ReCAPTCHA network problem'})} size='invisible' />
+
+            <MainLoadIcon />
         </>
     }
 }

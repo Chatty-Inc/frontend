@@ -1,13 +1,14 @@
 import * as lzString from 'lz-string'
-import debug from '../logger';
+import debug from '../dev/logger';
 
 /**
  * Interface for outputting parsed gateway objects
  * @interface
  */
 export interface parsedGatewayMsg {
-    type: 'participantModify' | 'msg' | 'file' | 'keepAlive' | 'connCmd' | 'invalid' | string; // Pretty self explanatory
-    payload?: object
+    type: 'participantModify' | 'msg' | 'file' | 'keepAlive' | 'connCmd' | 'resp' | 'invalid' | string; // Pretty self explanatory
+    payload?: object;
+    tag?: string;
 }
 
 /**
@@ -21,7 +22,8 @@ export default function parseGatewayMsg(rawMsg: Uint8Array): parsedGatewayMsg {
 
     if (!msg) return {type: 'invalid'};
     const split = msg.split(',');
-    if (split.length !== 2) return {type: 'invalid'};
+    if (split.length < 2) return {type: 'invalid'};
 
-    return {type: split[0], payload: {}}
+    if (split.length === 2) return {type: split[0], payload: {}}
+    return {tag: split[0], type: split[1], payload: {}}
 }

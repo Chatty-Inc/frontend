@@ -2,7 +2,7 @@ import {Component} from "react";
 import styled from "styled-components";
 import {ThemeCtx} from "../core/UIThemeProvider";
 import {themeOptions} from "../types";
-import Color from "../../vendor/color";
+import Color from "../../utils/vendor/color";
 import {SingleChildProps} from "../ElementProps";
 
 const StyledContainer = styled.div<themeOptions>`
