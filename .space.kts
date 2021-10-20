@@ -5,9 +5,13 @@
 */
 
 job("Build and publish frontend") {
-    container(displayName = "Ubuntu build environment", image = "ubuntu:bionic") {
+    container(displayName = "Alpine build environment", image = "alpine") {
         shellScript {
-            content = "ls -a"
+            content = """
+                apk add yarn
+                yarn
+                yarn run build
+            """
         }
     }
 }
