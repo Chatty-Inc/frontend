@@ -1,5 +1,4 @@
 import { CSSProperties } from "styled-components";
-import {ContainerArgs} from "./types";
 import {ReactElement} from "react";
 
 /**
@@ -10,7 +9,7 @@ export interface BaseElementProps extends CSSProperties {
 
 }
 
-export interface ElevatedElementProps extends BaseElementProps {
+export interface ElevatedElementProps {
     elevation?: number;
 }
 

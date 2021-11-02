@@ -1,6 +1,4 @@
-interface constructedMsgOptions {
-
-}
+import {IFileUploadPayload, IKeyUpdatePayload, IMsgSendPayload, IWSMsgTypes} from "./types";
 
 /**
  * A basic function right above the WebSocketManager that ensures
@@ -10,10 +8,16 @@ interface constructedMsgOptions {
  * @param {string} tag - Tag that will be sent back from server when
  * the message has been processed (successfully or not)
  * @param {string} type - What type of message to send to the server
- * @param {constructedMsgOptions} options -
+ * @param payload - The payload of the respective type to be sent
  * @returns {string} - Constructed message that can be sent after compression
  */
-export default function constructGatewayMsg(tag: string, type: 'msg' | 'fileUpload', options: constructedMsgOptions): string {
-    // Format: tag |
-    return ''
+export default function constructGatewayMsg(tag: string,
+                                            type: IWSMsgTypes,
+                                            payload: IMsgSendPayload | IKeyUpdatePayload | IFileUploadPayload): string {
+    // Format: tag; type; payload (JSON-encoded);
+    return [
+        tag,
+        type,
+        JSON.stringify(payload)
+    ].join(';');
 }

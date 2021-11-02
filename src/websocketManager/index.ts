@@ -1,6 +1,8 @@
 import parseGatewayMsg from "./parse";
 import * as lzString from 'lz-string'
 import debug from "../dev/logger";
+import {IWSMsgTypes, IWSReceivedPayload} from "./types";
+import constructGatewayMsg from "./construct";
 
 /**
  * Manages the whole Gateway WebSocket connection, including
@@ -25,9 +27,10 @@ export class WebSocketManager {
     private retryAt = +new Date(); // Time to retry
     private reconnectIntID = 0;
     private readonly reconnectOnFail: boolean;
+    // Keepalive interval ID (approx every 5s)
+    private keepaliveID: number | null = null;
     // Stores
-    private promises: Record<string, object> = {};
-
+    private promises: Record<string, (value: (IWSReceivedPayload | PromiseLike<IWSReceivedPayload>)) => void> = {};
     // Static constants
     static STATE_DC_CONNECTING = 0;
     static STATE_CONNECTED = 1;
@@ -78,19 +81,32 @@ export class WebSocketManager {
             }
         }, 500); // Close connection if not connected in 500ms
 
-        // Set event handlers
+        // Set event handlers for WebSocket
         this.ws.onopen = () => {
             debug('GatewayManager', 'Connected to Gateway at ' + this.ws?.url);
-            this.connState = WebSocketManager.STATE_CONNECTED;
             this.ws?.send(lzString.compressToUint8Array('hi'));
 
             this.oldFailRetries = this.failureRetries;
             this.lastConnected = +new Date();
             this.failureRetries = 0;
+
+            if (this.keepaliveID) clearInterval(this.keepaliveID);
+            this.keepaliveID = setInterval(async () => {
+                const sentTime = +new Date();
+                debug('GatewayManager', 'Sent keepalive at: ' + new Date(sentTime));
+                const resp = await this.send('keepAlive', {});
+                if ('time' in resp) {
+                    debug('GatewayManager', 'WS latency: ' + (Number(resp.time) - sentTime) + 'ms');
+                }
+            }, 5000) as unknown as number;
+            this.connState = WebSocketManager.STATE_CONNECTED;
         }
         this.ws.onmessage = msg => this.handleWSMessage(msg);
 
         this.ws.onclose = ev => {
+            // Stop keepalive interval
+            if (this.keepaliveID) clearInterval(this.keepaliveID);
+
             debug('GatewayManager',
                 `WebSocket closed with code ${ev.code} and reason ${ev.reason}, cleanlyClosed: ${ev.wasClean}`);
             this.connState = WebSocketManager.STATE_DC_CONNECTING;
@@ -100,19 +116,58 @@ export class WebSocketManager {
         }
         this.ws.onerror = err => {
             this.connState = WebSocketManager.STATE_ERROR_RECONNECTING;
-            debug('GatewayManager', `WebSocket encountered error: \n${JSON.stringify(err)}\nReadyState: ${this.ws?.readyState}`);
+            debug('GatewayManager',
+                `WebSocket encountered error: \n${JSON.stringify(err)}\nReadyState: ${this.ws?.readyState}`);
             if (this.ws?.readyState !== WebSocket.OPEN) this.reconnectOnFail
                 ? this.reconnectWithBackoff()
                 : this.connState = WebSocketManager.STATE_ERROR_FATAL;
         }
     }
 
+    /** Lowest level received ws message handler */
     private handleWSMessage(incomingMsg: MessageEvent) {
         if (!(incomingMsg.data instanceof ArrayBuffer)) return
         const parsed = parseGatewayMsg(new Uint8Array(incomingMsg.data));
-        switch (parsed.type) {
-
+        if (parsed?.tag && this.promises[parsed?.tag]) {
+            this.promises[parsed.tag](parsed.payload);
+            delete this.promises[parsed.tag];
         }
+    }
+
+    /**
+     * Lowest level sending ws method
+     * @param {IWSMsgTypes} type - Type of message to send
+     * @param {object} payload - Data payload to send
+     * @returns {string} - Tag sent with data
+     * */
+    private sendWSMessage(type: IWSMsgTypes, payload: object): string | null {
+        if (this.ws?.readyState !== WebSocket.OPEN) return null;
+
+        let tag = '';
+
+        do tag = Math.floor(Math.random() * 10000).toString();
+        while (Object.keys(this.promises).includes(tag));
+
+        const msg = constructGatewayMsg(tag, type, payload);
+        this.ws?.send(lzString.compressToUint8Array(msg));
+
+        return tag;
+    }
+
+    /**
+     * Public-facing method for sending WS messages to
+     * the Gateway. Mostly a wrapper method for the private
+     * method 'this.sendWSMessage', with some promise logic
+     */
+    send(type: IWSMsgTypes, payload: object): Promise<IWSReceivedPayload> {
+        return new Promise<IWSReceivedPayload>((resolve, reject) => {
+            const tag = this.sendWSMessage(type, payload);
+            if (!tag) {
+                reject();
+                return;
+            }
+            this.promises[tag] = resolve;
+        });
     }
 
     /** Attempt reconnection with exponential backoff policy */
@@ -145,5 +200,6 @@ export class WebSocketManager {
         debug('GatewayManager', 'Closing connection as requested');
         this.ws?.close(1000, reason ?? 'bye');
         clearInterval(this.reconnectIntID);
+        if (this.keepaliveID) clearInterval(this.keepaliveID);
     }
 }

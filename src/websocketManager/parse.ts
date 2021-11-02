@@ -1,13 +1,14 @@
 import * as lzString from 'lz-string'
 import debug from '../dev/logger';
+import {IWSMsgTypes, IWSReceivedPayload} from "./types";
 
 /**
  * Interface for outputting parsed gateway objects
  * @interface
  */
 export interface parsedGatewayMsg {
-    type: 'participantModify' | 'msg' | 'file' | 'keepAlive' | 'connCmd' | 'resp' | 'invalid' | string; // Pretty self explanatory
-    payload?: object;
+    type: IWSMsgTypes | 'invalid' | string; // Pretty self explanatory
+    payload: IWSReceivedPayload;
     tag?: string;
 }
 
@@ -20,10 +21,10 @@ export default function parseGatewayMsg(rawMsg: Uint8Array): parsedGatewayMsg {
     const msg = lzString.decompressFromUint8Array(rawMsg);
     debug('ParseGatewayMsg', 'Received Gateway message:\n' + msg);
 
-    if (!msg) return {type: 'invalid'};
-    const split = msg.split(',');
-    if (split.length < 2) return {type: 'invalid'};
+    if (!msg) return {type: 'invalid', payload: {}};
+    const split = msg.split(';');
+    if (split.length < 2) return {type: 'invalid', payload: {}};
 
-    if (split.length === 2) return {type: split[0], payload: {}}
-    return {tag: split[0], type: split[1], payload: {}}
+    if (split.length === 2) return {type: split[0], payload: JSON.parse(split[1])}
+    return {tag: split[0], type: split[1], payload: JSON.parse(split[2])}
 }

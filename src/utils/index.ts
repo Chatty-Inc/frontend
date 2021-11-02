@@ -1,4 +1,7 @@
+import * as base64 from 'byte-base64';
+
 export async function arrayToBase64(arr: Uint8Array): Promise<string> {
+    //return btoa(new TextDecoder('utf8').decode(arr));
     return new Promise<string>(resolve => {
         const blob = new Blob([arr],{type:'application/octet-binary'});
         const reader = new FileReader();
@@ -8,4 +11,11 @@ export async function arrayToBase64(arr: Uint8Array): Promise<string> {
         };
         reader.readAsDataURL(blob);
     })
+    // return base64.bytesToBase64(arr);
 }
+
+export function base64ToArray(txt: string): Uint8Array {
+    return base64.base64ToBytes(txt);
+}
+
+export { default as emojis } from './emojiLookup';
