@@ -13,6 +13,7 @@ import constructGatewayMsg from "./construct";
  */
 export class WebSocketManager {
     onstatechange?: (newState: number) => void;
+    onSignedOut?: () => void; // Called when Gateway closes WS with auth error
     // Stuff that should never change
     readonly uuid: string = '';
     readonly gatewayURL: string = '';
@@ -42,10 +43,9 @@ export class WebSocketManager {
     static MAX_BACKOFF_DUR = 60000;
     static INITIAL_BACKOFF = 500;
 
-    constructor(uuid: string, reconnectOnFailure: boolean = true) {
+    constructor(reconnectOnFailure: boolean = true) {
         this.reconnectOnFail = reconnectOnFailure;
         this.debug = process.env.NODE_ENV === 'development'; // Enable debug
-        this.uuid = uuid;
         this.gatewayURL = this.debug ? 'ws://localhost:3000/ws' : ''; // Fill in production gateway URL
 
         debug('GatewayManager', 'Attempting Gateway WebSocket connection at ' + this.gatewayURL);
@@ -112,7 +112,10 @@ export class WebSocketManager {
             this.connState = WebSocketManager.STATE_DC_CONNECTING;
             if (+new Date() - 100 < this.lastConnected) this.failureRetries = this.oldFailRetries;
             if (this.reconnectOnFail && ev.reason !== 'bye' && ev.reason !== 'unauthorized') this.reconnectWithBackoff();
-            else this.connState = WebSocketManager.STATE_ERROR_FATAL
+            else {
+                this.connState = WebSocketManager.STATE_ERROR_FATAL;
+                if (this.onSignedOut) this.onSignedOut();
+            }
         }
         this.ws.onerror = err => {
             this.connState = WebSocketManager.STATE_ERROR_RECONNECTING;

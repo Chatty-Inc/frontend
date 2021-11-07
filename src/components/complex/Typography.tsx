@@ -1,8 +1,8 @@
-import React, {Component} from "react";
+import React, { Component, CSSProperties } from 'react';
 import {ThemeCtx} from "../core/UIThemeProvider";
-import {themeOptions} from "../types";
+import {IThemeOptions} from "../types";
 
-export interface TypographyProps {
+export interface TypographyProps extends CSSProperties {
     variant: 'h1' | 'h2' | 'h3' | 'p' | 'subtitle' | 'body';
 }
 interface componentLookup {
@@ -26,7 +26,7 @@ export default class Typography extends Component<TypographyProps, {}> {
     }
 
     render() {
-        const theme: themeOptions = this.context;
+        const theme: IThemeOptions = this.context;
 
         // TODO: Add styling based on component type
         return React.createElement(
@@ -36,6 +36,7 @@ export default class Typography extends Component<TypographyProps, {}> {
                 style: {
                     color: theme.textColors?.default,
                     fontFamily: `${theme.fontFamily}, sans-serif`,
+                    ...this.props
                 }
             }
         );

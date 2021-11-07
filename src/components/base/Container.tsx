@@ -1,6 +1,6 @@
 import {Component, HTMLAttributes} from "react";
 import {ThemeCtx} from "../core/UIThemeProvider";
-import {themeOptions} from "../types";
+import {IThemeOptions} from "../types";
 import styled from "styled-components";
 import {ElevatedElementProps} from "../ElementProps";
 import Color from "../../utils/vendor/color";
@@ -10,7 +10,7 @@ export interface ContainerProps extends HTMLAttributes<HTMLDivElement>, Elevated
 }
 
 const StyledBox = styled.div`
-  border-radius: 14px;
+  border-radius: 18px;
   display: block;
   background-color: ${p => p.theme.variant === 'elevated' 
       ? (p.theme.theme === 'dark' 
@@ -38,7 +38,7 @@ export default class Container extends Component<ContainerProps, {}> {
     static contextType = ThemeCtx;
 
     render() {
-        const theme: themeOptions = this.context;
+        const theme: IThemeOptions = this.context;
 
         return <StyledBox
             theme={{...theme, elevation: this.props.elevation ?? 4, variant: this.props.variant ?? 'elevated'}}

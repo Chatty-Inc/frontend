@@ -1,5 +1,3 @@
-import "@fontsource/ibm-plex-sans";
-
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';

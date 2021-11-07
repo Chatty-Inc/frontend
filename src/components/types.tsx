@@ -1,27 +1,36 @@
-import {ReactChild, ReactChildren, ReactElement} from 'react';
+import {ReactChild, ReactChildren} from 'react';
 
 export interface ContainerArgs {
     children: ReactChild | ReactChildren | ReactChildren[] | ReactChild[];
 }
 
-export interface colors {
+export interface IThemeColors {
     default: string;
     button?: string;
+    filledBtn?: string;
     h1?: string;
     h2?: string;
     h3?: string;
-    h4?: string;
-    h5?: string;
-    h6?: string;
     body?: string;
     small?: string;
+    input?: string
 }
 
-export interface themeOptions {
+/** Various breakpoints in px */
+export interface IThemeSizes {
+    xs: number; // Extra-small
+    sm: number; // Small
+    md: number; // Medium
+    lg: number; // Large
+    xl: number; // Extra-large
+}
+
+export interface IThemeOptions {
     theme?: 'light' | 'dark';
     primary?: string | '#e2b714';
-    textColors?: colors;
-    backgroundColors?: colors;
+    textColors?: IThemeColors;
+    backgroundColors?: IThemeColors;
     elevationLevel?: number;
     fontFamily?: string;
+    sizes?: Partial<IThemeSizes>
 }

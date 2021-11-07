@@ -73,14 +73,13 @@ export default class SyncedEncryptedStore {
         });
     };
 
-    async getVal(key: string): Promise<object> {
+    async getVal(key: string): Promise<object | null> {
         const resp = (await this.ws.send('vaultAction', {
             action: 'get',
             key,
         })) as IEncryptedStoreData;
 
-        if (!resp.salt || !resp.content || !resp.iv || resp.error)
-            throw new Error('Gateway error' + resp.error ? (' : ' + resp.error) : '');
+        if (!resp.salt || !resp.content || !resp.iv || resp.error) return null;
 
         const salt = base64ToArray(resp.salt),
             encrypted = base64ToArray(resp.content),
@@ -95,9 +94,7 @@ export default class SyncedEncryptedStore {
             aesKey,
             encrypted
         );
-
-        console.log(compressedContent)
-
+        
         return JSON.parse(lzString.decompressFromUint8Array(new Uint8Array(compressedContent)) as string);
     }
 }

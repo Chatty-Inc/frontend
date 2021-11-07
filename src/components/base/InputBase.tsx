@@ -1,7 +1,7 @@
 import {Component, InputHTMLAttributes} from "react";
 import styled from "styled-components";
 import {ThemeCtx} from "../core/UIThemeProvider";
-import {themeOptions} from "../types";
+import {IThemeOptions} from "../types";
 
 const StyledInput = styled.input`
   appearance: none;
@@ -9,6 +9,7 @@ const StyledInput = styled.input`
   border: none;
   outline: none;
   font-size: inherit;
+  font-family: inherit;
   
   padding: 0;
   margin: 0;
@@ -25,8 +26,8 @@ export default class InputBase extends Component<InputHTMLAttributes<any>, {}> {
     static contextType = ThemeCtx;
 
     render() {
-        const theme: themeOptions = this.context;
+        const theme: IThemeOptions = this.context;
 
-        return <StyledInput style={{color: theme.textColors?.body}} {...this.props} />
+        return <StyledInput style={{color: theme.textColors?.input}} {...this.props} />
     }
 }
