@@ -19,7 +19,7 @@ export default {
 const Template: ComponentStory<typeof Dialog> = (args) => <>
   { Array.from({length: 20}).map((_, i) => <Typography variant='h1' key={Number(i)}>Content</Typography>)}
   <Dialog {...args}>
-    <DialogTextContent title={args.title!} content={args.content!} />
+    <DialogTextContent onClose={() => {}} title={args.title!} content={args.content!} />
   </Dialog>
 </>;
 

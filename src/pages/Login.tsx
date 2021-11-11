@@ -1,4 +1,4 @@
-import React, {Component, createRef} from 'react';
+import React, { Component, createRef, CSSProperties } from 'react';
 import {ThemeCtx} from '../components/core/UIThemeProvider';
 import OutlinedTextField from '../components/base/OutinedTextField';
 import InputBase from '../components/base/InputBase';
@@ -14,6 +14,8 @@ import chattyIcon from '../assets/img/chattyIcon.png';
 import HorizontalPager from '../components/complex/HorizontalPager';
 import styled from 'styled-components';
 import delay from '../utils/delay';
+import IconSwapper, { FeatherIconNames } from '../components/utility/IconSwapper';
+import ProgressRing from '../components/complex/ProgressRing';
 
 interface LoginState {
     username: string;
@@ -22,6 +24,8 @@ interface LoginState {
     loginErr?: string;
     handle: string;
     pagerPage: number;
+    captchaIconSwapper: IIconSwapperProps;
+    loginIconSwapper: IIconSwapperProps;
 }
 
 const ActionBtnRow = styled.div`
@@ -58,6 +62,8 @@ class Login extends Component<RouteComponentProps, LoginState> {
             vaultPw: '',
             handle: '',
             pagerPage: 0,
+            captchaIconSwapper: {icon: 'help-circle', progress: 0},
+            loginIconSwapper: {icon: 'download-cloud', progress: 0},
         }
 
         this.handleLogin = this.handleLogin.bind(this);
@@ -92,20 +98,41 @@ class Login extends Component<RouteComponentProps, LoginState> {
         return this.reCaptcha.current?.executeAsync();
     }
 
-    async handleLogin(signUp = false) {
-        console.log('Waiting for captcha')
-        if (this.reCaptcha.current?.getValue()) this.reCaptcha.current?.reset()
-        const captchaToken = await this.captcha()
-        if (!captchaToken) {
-            this.setState({loginErr: 'ReCAPTCHA error'});
-            return;
-        }
+    async handleCaptchaErr() {
+        this.setState({
+                          loginErr: 'ReCAPTCHA error, please try again later',
+                          password: '',
+                          vaultPw: '',
+                          captchaIconSwapper: {icon: 'circle', progress: 100}
+                      });
+        await delay(1500);
+        this.setPg(0);
+        this.setState({ captchaIconSwapper: {icon: 'help-circle', progress: 0} });
+        return
+    }
 
-        await delay(2000);
+    async handleLogin(signUp = false) {
+        // Attempt reCAPTCHA execution
+        let captchaToken: string | null | undefined;
+        try {
+            if (this.reCaptcha.current?.getValue()) this.reCaptcha.current?.reset();
+            captchaToken = await this.captcha();
+        } catch (e) { await this.handleCaptchaErr(); return; }
+        if (!captchaToken) { await this.handleCaptchaErr(); return; }
+
+        // Update iconSwapper with a check and login 1.5s later
+        await delay(500);
+        this.setState({ captchaIconSwapper: {icon: 'user-check', progress: 100} });
+        await delay(1500);
         this.setPg(3);
+
         const err = await login(this.state.username, this.state.password, captchaToken!, signUp, this.state.handle);
         if (err) {
-            if (err.reason === 'invalid-cred') this.setState({loginErr: 'Please ensure your email and passwords are correct'});
+            if (err.reason === 'invalid-cred') this.setState({
+                loginErr: 'Please ensure your email and passwords are correct',
+                password: '',
+                vaultPw: '',
+            });
             this.setPg(0);
             return;
         }
@@ -173,8 +200,13 @@ class Login extends Component<RouteComponentProps, LoginState> {
                         </ActionBtnRow>
                     </>
                     <>
-                        <IconSwapperWithProgress />
-                        <Typography variant='body'>Please complete the reCAPTCHA challenge if requested</Typography>
+                        <IconSwapperWithProgress
+                            margin='auto'
+                            icon={this.state.captchaIconSwapper.icon}
+                            progress={this.state.captchaIconSwapper.progress} />
+                        <Typography variant='body' marginTop='2rem' textAlign='center'>
+                            Please complete the reCAPTCHA challenge if requested
+                        </Typography>
                     </>
                     <>
                         <Typography variant='body'>Just a moment, we're signing you in&hellip;</Typography>
@@ -191,9 +223,23 @@ class Login extends Component<RouteComponentProps, LoginState> {
 
 export default withRouter(Login);
 
+interface IIconSwapperProps extends CSSProperties {
+    icon: FeatherIconNames;
+    progress: number;
+}
 
-function IconSwapperWithProgress() {
-    return <>
-
-    </>
+/**
+ * Small utility functional component that combines the
+ * circular progress bar and animated icon swapper for
+ * certain login pages
+ * @param {FeatherIconNames} icon - Currently displayed icon
+ * @param {number} progress - Progress of circular progress (0 - 100)
+ * @param delegated
+ * @constructor
+ */
+export function IconSwapperWithProgress({icon, progress, ...delegated}: IIconSwapperProps) {
+    return <Centered position='relative' width='fit-content' padding='1.5rem' {...delegated}>
+        <IconSwapper icon={icon} size={48} />
+        <ProgressRing radius={60} stroke={6} progress={progress} style={{position: 'absolute'}} />
+    </Centered>
 }

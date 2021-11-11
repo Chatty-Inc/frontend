@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Component } from 'react';
+import { Component, CSSProperties } from 'react';
 import { ThemeCtx } from '../core/UIThemeProvider';
 import { IThemeOptions } from '../types';
 import Color from '../../utils/vendor/color';
@@ -7,9 +7,10 @@ import Color from '../../utils/vendor/color';
 export interface IProgressRingProps {
     radius: number;
     stroke: number;
-    strokeCol: string;
+    strokeCol?: string;
     baseStroke?: number;
     progress: number;
+    style?: CSSProperties;
 }
 
 export default class ProgressRing extends Component<IProgressRingProps> {
@@ -36,6 +37,7 @@ export default class ProgressRing extends Component<IProgressRingProps> {
 
         return (
             <motion.svg
+                style={this.props.style}
                 height={rad * 2}
                 width={rad * 2}>
                 <circle

@@ -131,9 +131,13 @@ export class WebSocketManager {
     private handleWSMessage(incomingMsg: MessageEvent) {
         if (!(incomingMsg.data instanceof ArrayBuffer)) return
         const parsed = parseGatewayMsg(new Uint8Array(incomingMsg.data));
-        if (parsed?.tag && this.promises[parsed?.tag]) {
-            this.promises[parsed.tag](parsed.payload);
-            delete this.promises[parsed.tag];
+        if (parsed?.tag) {
+            if (this.promises[parsed?.tag]) { // This is a response
+                this.promises[parsed.tag](parsed.payload);
+                delete this.promises[parsed.tag];
+            }
+            else { // This is a request
+            }
         }
     }
 

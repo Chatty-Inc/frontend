@@ -1,4 +1,4 @@
-import React, {Component} from "react";
+import React, { Component, ReactChild, ReactElement } from 'react';
 import ScrollLock  from 'react-scrolllock';
 import { motion } from "framer-motion";
 import styled from "styled-components";
@@ -77,13 +77,31 @@ export default class Dialog extends Component<IDialogProps, {isMounted: boolean}
     }
 }
 
-export function DialogTextContent({title, content}: {title: string; content: string;}) {
+export interface IDialogTextContentProps {
+    title: string;
+    content: string;
+    closeLabel?: string;
+    buttons?: ReactChild[] | ReactElement[];
+    onClose: () => void;
+}
+
+/**
+ * A template component to be used as a child with the
+ * base dialog component, to create a text dialog.
+ * @param {string} title - Title of text dialog
+ * @param {string} content - Content
+ * @param {string} closeLabel - Label of close/primary button
+ * @param {ReactChild[] | ReactElement[]} buttons - Any additional buttons to add into the button row
+ * @param {() => void} onClose - Function that is called when close button is clicked
+ * @constructor
+ */
+export function DialogTextContent({title, content, closeLabel, buttons, onClose}: IDialogTextContentProps) {
     return <Container variant='elevated' elevation={8} style={{overflow: 'hidden'}}>
         <Typography variant='h3'>{title}</Typography>
         <Typography variant='body'>{content}</Typography>
         <StyledButtonRow>
-            <Button>Another option</Button>
-            <Button filled>Close</Button>
+            {buttons}
+            <Button filled onclick={onClose}>{closeLabel ?? 'Close'}</Button>
         </StyledButtonRow>
     </Container>
 }

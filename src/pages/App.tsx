@@ -8,10 +8,11 @@ import Container from '../components/base/Container';
 import Typography from "../components/complex/Typography";
 import SyncedEncryptedStore from "../stores/SyncedEncryptedStore";
 import {RouteComponentProps, withRouter} from 'react-router-dom';
+import Dialog, { DialogTextContent } from '../components/complex/Dialog';
 
 interface AppState {
     wsState: number;
-    loginErr?: string;
+    uDataDialog: { open: boolean, content: string }
 }
 
 let ws: WebSocketManager | undefined = undefined;
@@ -34,7 +35,8 @@ class App extends Component<RouteComponentProps, AppState> {
         super(props);
 
         this.state = {
-            wsState: WebSocketManager.STATE_ERROR_FATAL
+            wsState: WebSocketManager.STATE_ERROR_FATAL,
+            uDataDialog: { open: false, content: '' }
         }
     }
 
@@ -49,12 +51,14 @@ class App extends Component<RouteComponentProps, AppState> {
             this.setState({wsState: ns});
             if (ns === WebSocketManager.STATE_CONNECTED) {
                 const store = new SyncedEncryptedStore(ws!, 'abcd');
-                await store.setVal('test', {hmm: 'does this work'});
-                console.log(await store.getVal('test'));
+                try {
+                    console.log(await store.getVal('test'));
+                } catch {
+                    console.log('Password wrong')
+                }
                 console.log(await store.getVal('doesnotexist'));
             }
         }
-        this.setState({loginErr: 'Logged in'})
     }
 
     render() {
@@ -65,10 +69,7 @@ class App extends Component<RouteComponentProps, AppState> {
             <Container variant='outlined' style={{display: 'flex', maxWidth: 500, margin: 'auto', gap: '.75rem'}}>
                 <div style={{flex: 1}}>
                     <Button primary='red' fullWidth onclick={() => {
-                        if (!ws) {
-                            this.setState({loginErr: 'Already logged out'})
-                            return;
-                        }
+                        if (!ws) return;
                         ws?.destroyConnection();
                         ws = undefined;
                         logout().then(() => this.props.history.push('/login'));
@@ -76,9 +77,17 @@ class App extends Component<RouteComponentProps, AppState> {
                 </div>
             </Container>
 
-            <Button>Get user data</Button>
+            <Button onclick={async () => {
+                const userData = await ws?.send('userInfo', {user: 'self'});
+                if (!userData) return;
+                this.setState({uDataDialog: {open: true, content: JSON.stringify(userData)}})
+            }}>Get user data</Button>
 
-            <p>{this.state.loginErr ?? 'No login error'}</p>
+            <Dialog open={this.state.uDataDialog.open}
+                    onClose={() => this.setState({uDataDialog: {open: false, content: this.state.uDataDialog.content}})}>
+                <DialogTextContent onClose={() => this.setState({uDataDialog: {open: false, content: this.state.uDataDialog.content}})}
+                    title='User info for self' content={this.state.uDataDialog.content} />
+            </Dialog>
         </>
     }
 }
