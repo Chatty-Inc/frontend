@@ -1,8 +1,9 @@
-import parseGatewayMsg from "./parse";
+import parseGatewayMsg from './parse';
 import * as lzString from 'lz-string'
-import debug from "../dev/logger";
-import {IWSMsgTypes, IWSReceivedPayload} from "./types";
-import constructGatewayMsg from "./construct";
+import debug from '../dev/logger';
+import { IUserInfoData, IWSMsgTypes, IWSReceivedPayload } from './types';
+import constructGatewayMsg from './construct';
+import { handleServerRequests } from './handleServerRequests';
 
 /**
  * Manages the whole Gateway WebSocket connection, including
@@ -128,7 +129,7 @@ export class WebSocketManager {
     }
 
     /** Lowest level received ws message handler */
-    private handleWSMessage(incomingMsg: MessageEvent) {
+    private async handleWSMessage(incomingMsg: MessageEvent) {
         if (!(incomingMsg.data instanceof ArrayBuffer)) return
         const parsed = parseGatewayMsg(new Uint8Array(incomingMsg.data));
         if (parsed?.tag) {
@@ -137,23 +138,27 @@ export class WebSocketManager {
                 delete this.promises[parsed.tag];
             }
             else { // This is a request
+                await handleServerRequests(parsed.type as IWSMsgTypes, parsed.payload)
             }
         }
     }
 
     /**
-     * Lowest level sending ws method
+     * Lowest level method to send messages to Gateway through the WebSocket
      * @param {IWSMsgTypes} type - Type of message to send
      * @param {object} payload - Data payload to send
-     * @returns {string} - Tag sent with data
+     * @param {string} predefinedTag - Tag to use instead of generating a random one
+     * @returns {string | null} - Tag sent with data
      * */
-    private sendWSMessage(type: IWSMsgTypes, payload: object): string | null {
+    private sendWSMessage(type: IWSMsgTypes, payload: object, predefinedTag?: string): string | null {
         if (this.ws?.readyState !== WebSocket.OPEN) return null;
 
-        let tag = '';
+        let tag = predefinedTag ?? '';
 
-        do tag = Math.floor(Math.random() * 10000).toString();
-        while (Object.keys(this.promises).includes(tag));
+        if (!predefinedTag) {
+            do tag = Math.floor(Math.random() * 10000).toString();
+            while (Object.keys(this.promises).includes(tag));
+        }
 
         const msg = constructGatewayMsg(tag, type, payload);
         this.ws?.send(lzString.compressToUint8Array(msg));
@@ -177,6 +182,19 @@ export class WebSocketManager {
         });
     }
 
+    /**
+     * Request user metadata of another user through UUID
+     * (if permissions are sufficient), or of themselves.
+     * This is a very small wrapper function for now.
+     * @param user
+     * @returns
+     */
+    async userInfo(user?: string): Promise<IUserInfoData | null> {
+        const info = await this.send('userInfo', {user: user ?? 'self'});
+        if ('uuid' in info && 'created' in info && 'username' in info && 'tag' in info && 'handlePortion' in info) return info;
+        else return null;
+    }
+
     /** Attempt reconnection with exponential backoff policy */
     private reconnectWithBackoff() {
         if (this.failureRetries > WebSocketManager.MAX_RETRIES) { // Stop retrying
@@ -195,7 +213,7 @@ export class WebSocketManager {
                 this.connect();
                 clearInterval(this.reconnectIntID);
             }
-        }, 100); // Check if its time to retry
+        }, 100); // Check if it's time to retry
     }
     /** Calculate the duration to wait before retrying, up to a maximum duration */
     private static getExpRetryDur(retryCount: number) {
@@ -203,6 +221,11 @@ export class WebSocketManager {
             + (Math.random() * WebSocketManager.RETRY_RANDOMNESS * (retryCount + 1)), WebSocketManager.MAX_BACKOFF_DUR));
     }
 
+    /**
+     * (Attempt to) close WebSocket connection with the Gateway
+     * cleanly, for handling logout, etc.
+     * @param {string?} reason - Optional close reason to set when closing ws
+     */
     destroyConnection(reason?: string) {
         debug('GatewayManager', 'Closing connection as requested');
         this.ws?.close(1000, reason ?? 'bye');

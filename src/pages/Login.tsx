@@ -16,6 +16,7 @@ import styled from 'styled-components';
 import delay from '../utils/delay';
 import IconSwapper, { FeatherIconNames } from '../components/utility/IconSwapper';
 import ProgressRing from '../components/complex/ProgressRing';
+import { IAuthErrorReasons } from '../cryptoBase/auth/types';
 
 interface LoginState {
     username: string;
@@ -43,7 +44,14 @@ const loginHeaderContentLookup = [
     ['Hello!', 'As always, keep passwords to yourself'],
     ['Are you a robot?', 'This helps ensure you\'re a human'],
     ['Just a moment', 'We\'re signing you in…']
-]
+];
+const simpleLoginErrors: Record<IAuthErrorReasons, string> = {
+    'invalid-cred': 'Verify if your credentials are correct',
+    'fetch-pub-fail': 'Server is unreachable',
+    'already-exists': 'An account with this username already exists',
+    'server-err': 'Server error, try again later',
+    'internal-err': 'An internal error has occurred, please report this error if it persists'
+}
 
 /**
  * Login page - Handles the whole user sign-in/up flow,
@@ -52,11 +60,12 @@ const loginHeaderContentLookup = [
 class Login extends Component<RouteComponentProps, LoginState> {
     static contextType = ThemeCtx;
     private reCaptcha = createRef<ReCAPTCHA>();
+    private readonly initialState: LoginState;
 
     constructor(props: RouteComponentProps) {
         super(props);
 
-        this.state = {
+        this.state = this.initialState = {
             username: '',
             password: '',
             vaultPw: '',
@@ -64,7 +73,7 @@ class Login extends Component<RouteComponentProps, LoginState> {
             pagerPage: 0,
             captchaIconSwapper: {icon: 'help-circle', progress: 0},
             loginIconSwapper: {icon: 'download-cloud', progress: 0},
-        }
+        };
 
         this.handleLogin = this.handleLogin.bind(this);
         this.setPg = this.setPg.bind(this);
@@ -100,11 +109,11 @@ class Login extends Component<RouteComponentProps, LoginState> {
 
     async handleCaptchaErr() {
         this.setState({
-                          loginErr: 'ReCAPTCHA error, please try again later',
-                          password: '',
-                          vaultPw: '',
-                          captchaIconSwapper: {icon: 'circle', progress: 100}
-                      });
+            loginErr: 'ReCAPTCHA error, please try again later',
+            password: '',
+            vaultPw: '',
+            captchaIconSwapper: {icon: 'x-circle', progress: 100}
+        });
         await delay(1500);
         this.setPg(0);
         this.setState({ captchaIconSwapper: {icon: 'help-circle', progress: 0} });
@@ -128,10 +137,9 @@ class Login extends Component<RouteComponentProps, LoginState> {
 
         const err = await login(this.state.username, this.state.password, captchaToken!, signUp, this.state.handle);
         if (err) {
-            if (err.reason === 'invalid-cred') this.setState({
-                loginErr: 'Please ensure your email and passwords are correct',
-                password: '',
-                vaultPw: '',
+            this.setState({
+                ...this.initialState,
+                loginErr: simpleLoginErrors[err.reason] ?? 'An unexpected error has occurred',
             });
             this.setPg(0);
             return;
@@ -175,7 +183,7 @@ class Login extends Component<RouteComponentProps, LoginState> {
                             <Button filled onclick={() => this.setPg(1)}>Next</Button>
                         </ActionBtnRow>
 
-                        <Typography variant='body' color='red'>{this.state.loginErr}</Typography>
+                        <Typography variant='body' color='red' fontWeight={700}>{this.state.loginErr}</Typography>
                     </>
                     <>
                         <OutlinedTextField>
@@ -209,7 +217,13 @@ class Login extends Component<RouteComponentProps, LoginState> {
                         </Typography>
                     </>
                     <>
-                        <Typography variant='body'>Just a moment, we're signing you in&hellip;</Typography>
+                        <IconSwapperWithProgress
+                            margin='auto'
+                            icon={this.state.captchaIconSwapper.icon}
+                            progress={this.state.captchaIconSwapper.progress} />
+                        <Typography variant='body' marginTop='2rem'>
+                            Just a moment, we're signing you in&hellip;
+                        </Typography>
                     </>
                 </HorizontalPager>
 

@@ -7,7 +7,7 @@ import {IWSMsgTypes, IWSReceivedPayload} from "./types";
  * @interface
  */
 export interface parsedGatewayMsg {
-    type: IWSMsgTypes | 'invalid' | string; // Pretty self explanatory
+    type: IWSMsgTypes | 'invalid' | string; // Pretty self-explanatory
     payload: IWSReceivedPayload;
     tag?: string;
 }

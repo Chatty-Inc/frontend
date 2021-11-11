@@ -1,18 +1,18 @@
-import React, {Component, createRef} from 'react';
+import React, {Component} from 'react';
 import {ThemeCtx} from '../components/core/UIThemeProvider';
 import Button from '../components/base/Button';
 import {logout} from '../cryptoBase/auth';
 import {WebSocketManager} from '../websocketManager';
-import ReCAPTCHA from 'react-google-recaptcha';
 import Container from '../components/base/Container';
 import Typography from "../components/complex/Typography";
 import SyncedEncryptedStore from "../stores/SyncedEncryptedStore";
 import {RouteComponentProps, withRouter} from 'react-router-dom';
 import Dialog, { DialogTextContent } from '../components/complex/Dialog';
+import { IUserInfoData } from '../websocketManager/types';
 
 interface AppState {
     wsState: number;
-    uDataDialog: { open: boolean, content: string }
+    uDataDialog: { open: boolean, content: IUserInfoData }
 }
 
 let ws: WebSocketManager | undefined = undefined;
@@ -29,14 +29,13 @@ const humanReadableWSStates = {
  */
 class App extends Component<RouteComponentProps, AppState> {
     static contextType = ThemeCtx;
-    private reCaptcha = createRef<ReCAPTCHA>();
 
     constructor(props: RouteComponentProps) {
         super(props);
 
         this.state = {
             wsState: WebSocketManager.STATE_ERROR_FATAL,
-            uDataDialog: { open: false, content: '' }
+            uDataDialog: { open: false, content: { username: '', tag: 0, created: 0, handlePortion: '', uuid: ''} }
         }
     }
 
@@ -51,11 +50,8 @@ class App extends Component<RouteComponentProps, AppState> {
             this.setState({wsState: ns});
             if (ns === WebSocketManager.STATE_CONNECTED) {
                 const store = new SyncedEncryptedStore(ws!, 'abcd');
-                try {
-                    console.log(await store.getVal('test'));
-                } catch {
-                    console.log('Password wrong')
-                }
+                try { console.log(await store.getVal('test')) }
+                catch { console.log('Password wrong') }
                 console.log(await store.getVal('doesnotexist'));
             }
         }
@@ -78,15 +74,17 @@ class App extends Component<RouteComponentProps, AppState> {
             </Container>
 
             <Button onclick={async () => {
-                const userData = await ws?.send('userInfo', {user: 'self'});
+                const userData = await ws?.userInfo();
                 if (!userData) return;
-                this.setState({uDataDialog: {open: true, content: JSON.stringify(userData)}})
+                this.setState({uDataDialog: {open: true, content: userData}})
             }}>Get user data</Button>
 
             <Dialog open={this.state.uDataDialog.open}
                     onClose={() => this.setState({uDataDialog: {open: false, content: this.state.uDataDialog.content}})}>
                 <DialogTextContent onClose={() => this.setState({uDataDialog: {open: false, content: this.state.uDataDialog.content}})}
-                    title='User info for self' content={this.state.uDataDialog.content} />
+                    title='User info for self' content={`UUID: ${this.state.uDataDialog.content.uuid}
+Handle: ${this.state.uDataDialog.content.handlePortion}#${this.state.uDataDialog.content.tag}
+Account created: ${new Date(this.state.uDataDialog.content.created)}`} />
             </Dialog>
         </>
     }
