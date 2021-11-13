@@ -1,23 +1,16 @@
-import {Component} from 'react';
+import { Component, HTMLProps } from 'react';
 import styled from 'styled-components';
 import {ThemeCtx} from '../core/UIThemeProvider';
-import {ContainerArgs, IThemeOptions} from '../types';
-import {BaseElementProps} from '../ElementProps';
+import {IThemeOptions} from '../types';
 import Color from '../../utils/vendor/color';
 import {getTextColFromBg} from '../core/utils';
-
-export interface ButtonProps extends BaseElementProps, ContainerArgs {
-    primary?: string;
-    fullWidth?: boolean;
-    filled?: boolean;
-    onclick?: () => void;
-}
 
 interface StyledButtonProps extends IThemeOptions {
     filled: boolean;
     btnPri: string;
     elevationLevel: number;
     elevation: number;
+    fullWidth?: boolean;
 }
 
 const StyledButton = styled.button<StyledButtonProps>`
@@ -36,6 +29,7 @@ const StyledButton = styled.button<StyledButtonProps>`
   margin: 0;
   height: 44px;
   min-width: 5rem;
+  width: ${p => p.fullWidth ? '100%' : 'auto'};
   
   // Text stuff
   font-size: 1em;
@@ -54,21 +48,32 @@ const StyledButton = styled.button<StyledButtonProps>`
   border: ${p => p.filled ? 'none' : `1px solid ${Color(p.btnPri).alpha(p.elevationLevel * (p.elevation + 8)).toString()}`};
   border-radius: 10px;
 
-  transition: border-color .2s ease-in-out, background-color .2s ease;
-  &:hover {
+  transition: border-color .2s ease-in-out, background-color .2s ease, filter .2s ease;
+  &:hover:not(:disabled) {
     border-color: ${p => Color(p.btnPri).alpha(p.elevationLevel * (p.elevation + 12)).toString()};
     background-color: ${p => p.filled 
             ? Color(p.btnPri).lighten(p.elevationLevel * (p.elevation + 4)).toString() 
             : Color(p.btnPri).alpha(p.elevationLevel * (p.elevation + 2)).toString()};
   }
   
-  &:active {
+  &:active:not(:disabled) {
     border-color: ${p => Color(p.btnPri).alpha(p.elevationLevel * (p.elevation + 12)).toString()};
     background-color: ${p => p.filled 
             ? Color(p.btnPri).darken(p.elevationLevel * (p.elevation)).toString() 
             : Color(p.btnPri).alpha(p.elevationLevel * (p.elevation - 2)).toString()};
   }
+  
+  &:disabled {
+    cursor: not-allowed;
+    filter: grayscale(75%) brightness(70%) contrast(90%);
+  }
 `
+
+export interface ButtonProps extends Omit<HTMLProps<HTMLButtonElement>, 'children' | 'ref' | 'type' | 'sizes' | 'as'> {
+    primary?: string;
+    fullWidth?: boolean;
+    filled?: boolean;
+}
 
 /**
  * A basic button that supports some simple customisation.
@@ -87,10 +92,8 @@ export default class Button extends Component<ButtonProps, {}> {
         const filled = !!this.props.filled;
         const primary = this.props.primary ?? (filled ? theme.backgroundColors?.filledBtn : theme.primary) ?? '#fff';
 
-        return <StyledButton filled={filled} elevation={elevation} btnPri={primary} {...theme}
-                             elevationLevel={theme.elevationLevel = theme.elevationLevel ?? 0.1}
-                             style={{...(this.props.fullWidth ? {display: 'block', width: '100%'} : {}), ...this.props}}
-                             onClick={this.props.onclick}>
+        return <StyledButton filled={filled} elevation={elevation} btnPri={primary} {...theme} fullWidth={this.props.fullWidth}
+                             elevationLevel={theme.elevationLevel = theme.elevationLevel ?? 0.1} {...this.props}>
             {this.props.children}
         </StyledButton>;
     }

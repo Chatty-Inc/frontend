@@ -1,13 +1,13 @@
 import * as lzString from 'lz-string'
 import debug from '../dev/logger';
-import {IWSMsgTypes, IWSReceivedPayload} from "./types";
+import { IWSMsgTypes, IWSReceivedPayload, wsMsgTypes } from './types';
 
 /**
  * Interface for outputting parsed gateway objects
  * @interface
  */
 export interface parsedGatewayMsg {
-    type: IWSMsgTypes | 'invalid' | string; // Pretty self-explanatory
+    type: IWSMsgTypes | 'invalid'; // Pretty self-explanatory
     payload: IWSReceivedPayload;
     tag?: string;
 }
@@ -25,6 +25,12 @@ export default function parseGatewayMsg(rawMsg: Uint8Array): parsedGatewayMsg {
     const split = msg.split(';');
     if (split.length < 2) return {type: 'invalid', payload: {}};
 
-    if (split.length === 2) return {type: split[0], payload: JSON.parse(split[1])}
-    return {tag: split[0], type: split[1], payload: JSON.parse(split[2])}
+    // Yes this is quite stupid, but it works and validates the types
+    const validateAndCastWSType = (type: string) => (wsMsgTypes.includes(type) ? type : 'invalid') as IWSMsgTypes | 'invalid'
+
+    if (split.length === 2) return {
+        type: validateAndCastWSType(split[0]),
+        payload: JSON.parse(split[1])
+    }
+    return {tag: split[0], type: validateAndCastWSType(split[1]), payload: JSON.parse(split[2])}
 }

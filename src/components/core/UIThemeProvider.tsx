@@ -8,6 +8,7 @@ const defaultTheme: IThemeOptions = {
     primary: '#8ab4f8',
     elevationLevel: 0.025,
     fontFamily: 'IBM Plex Sans',
+    palette: {error: '#f44336'}
 }
 
 const ThemeCtx = createContext({...defaultTheme})

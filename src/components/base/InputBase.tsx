@@ -1,7 +1,7 @@
-import {Component, InputHTMLAttributes} from "react";
-import styled from "styled-components";
-import {ThemeCtx} from "../core/UIThemeProvider";
-import {IThemeOptions} from "../types";
+import { Component, createRef, InputHTMLAttributes, RefObject } from 'react';
+import styled from 'styled-components';
+import {ThemeCtx} from '../core/UIThemeProvider';
+import {IThemeOptions} from '../types';
 
 const StyledInput = styled.input`
   appearance: none;
@@ -24,10 +24,21 @@ const StyledInput = styled.input`
  */
 export default class InputBase extends Component<InputHTMLAttributes<any>, {}> {
     static contextType = ThemeCtx;
+    private readonly inputRef: RefObject<HTMLInputElement>;
 
+    constructor(props: InputHTMLAttributes<any>) {
+        super(props);
+        
+        this.inputRef = createRef<HTMLInputElement>()
+    }
+
+    focus() {
+        this.inputRef.current?.focus();
+    }
+    
     render() {
         const theme: IThemeOptions = this.context;
 
-        return <StyledInput style={{color: theme.textColors?.input}} {...this.props} />
+        return <StyledInput ref={this.inputRef} style={{color: theme.textColors?.input}} {...this.props} />
     }
 }

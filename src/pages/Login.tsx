@@ -17,11 +17,11 @@ import delay from '../utils/delay';
 import IconSwapper, { FeatherIconNames } from '../components/utility/IconSwapper';
 import ProgressRing from '../components/complex/ProgressRing';
 import { IAuthErrorReasons } from '../cryptoBase/auth/types';
+import { StaticContext } from 'react-router';
 
 interface LoginState {
     username: string;
     password: string;
-    vaultPw: string;
     loginErr?: string;
     handle: string;
     pagerPage: number;
@@ -53,22 +53,27 @@ const simpleLoginErrors: Record<IAuthErrorReasons, string> = {
     'internal-err': 'An internal error has occurred, please report this error if it persists'
 }
 
+export interface ILoginRouterState {
+    signedOut: boolean;
+}
+export type LoginRouterProps = RouteComponentProps<{}, StaticContext, ILoginRouterState>
+
 /**
  * Login page - Handles the whole user sign-in/up flow,
  * with Google-inspired UI and a spring animated viewpager
  */
-class Login extends Component<RouteComponentProps, LoginState> {
+class Login extends Component<LoginRouterProps, LoginState> {
     static contextType = ThemeCtx;
     private reCaptcha = createRef<ReCAPTCHA>();
     private readonly initialState: LoginState;
+    private readonly pwField: React.RefObject<InputBase>;
 
-    constructor(props: RouteComponentProps) {
+    constructor(props: LoginRouterProps) {
         super(props);
 
         this.state = this.initialState = {
             username: '',
             password: '',
-            vaultPw: '',
             handle: '',
             pagerPage: 0,
             captchaIconSwapper: {icon: 'help-circle', progress: 0},
@@ -77,17 +82,24 @@ class Login extends Component<RouteComponentProps, LoginState> {
 
         this.handleLogin = this.handleLogin.bind(this);
         this.setPg = this.setPg.bind(this);
+        this.handleFieldInput = this.handleFieldInput.bind(this);
+
+        this.pwField = createRef<InputBase>()
     }
 
     componentDidMount() {
-        document.title = 'Chatty - Login'
+        document.title = 'Chatty - Login';
+        if (!this.props.location.state?.signedOut) this.props.history.push('/app')
     }
 
-    private setPg(page: number) {
-        this.setState({pagerPage: page})
+    private setPg(page?: number) {
+        const targetPg = page ?? this.state.pagerPage + 1;
+        if (targetPg > this.state.pagerPage) this.setState({loginErr: ''});
+        this.setState({pagerPage: targetPg});
     }
 
     async captcha() {
+        // Over-engineered piece of code to style ReCAPTCHA dialog
         let times = 0;
         const id = setInterval(() => {
             if (times >= 10) clearInterval(id);
@@ -109,9 +121,8 @@ class Login extends Component<RouteComponentProps, LoginState> {
 
     async handleCaptchaErr() {
         this.setState({
+            ...this.initialState,
             loginErr: 'ReCAPTCHA error, please try again later',
-            password: '',
-            vaultPw: '',
             captchaIconSwapper: {icon: 'x-circle', progress: 100}
         });
         await delay(1500);
@@ -149,6 +160,8 @@ class Login extends Component<RouteComponentProps, LoginState> {
         }
     }
 
+    handleFieldInput() {}
+
     render() {
         return <Centered>
             <Container variant='outlined'
@@ -167,8 +180,11 @@ class Login extends Component<RouteComponentProps, LoginState> {
                 <HorizontalPager page={this.state.pagerPage} marginLeft='-1rem' width={432}>
                     <>
                         <OutlinedTextField>
-                            <InputBase placeholder='Username' type='email' value={this.state.username}
-                                       onKeyDown={({key}) => key === 'Enter' ? this.setPg(1) : 0}
+                            <InputBase placeholder='Username' type='text' value={this.state.username}
+                                       onKeyDown={({key, currentTarget}) => {
+                                           if (key === 'Enter') if (currentTarget.checkValidity()) this.setPg(1);
+                                           else currentTarget.reportValidity();
+                                       }} required minLength={4}
                                        onChange={e => this.setState({username: e.currentTarget.value})} />
                         </OutlinedTextField>
 
@@ -178,9 +194,10 @@ class Login extends Component<RouteComponentProps, LoginState> {
                         </Typography>
 
                         <ActionBtnRow>
-                            <Button onclick={() => this.setPg(0)}>Create Account</Button>
+                            <Button onClick={() => this.setPg(0)}>Create Account</Button>
                             <FlexFiller />
-                            <Button filled onclick={() => this.setPg(1)}>Next</Button>
+                            <Button filled onClick={() => this.setPg(1)}
+                                    disabled={this.state.username.trim().length < 4}>Next</Button>
                         </ActionBtnRow>
 
                         <Typography variant='body' color='red' fontWeight={700}>{this.state.loginErr}</Typography>
@@ -188,24 +205,23 @@ class Login extends Component<RouteComponentProps, LoginState> {
                     <>
                         <OutlinedTextField>
                             <InputBase placeholder='Account Password' type='password' value={this.state.password}
-                                       onChange={e => this.setState({password: e.currentTarget.value})} />
+                                       onChange={e => this.setState({password: e.currentTarget.value})}
+                                       minLength={5} required ref={this.pwField} />
                         </OutlinedTextField>
-                        <OutlinedTextField marginTop='.75rem'>
-                            <InputBase placeholder='Vault Password' type='password' value={this.state.vaultPw}
-                                       onChange={e => this.setState({vaultPw: e.currentTarget.value})} />
-                        </OutlinedTextField>
-                        <Typography variant='subtitle' paddingBottom='.2rem' paddingTop='.2rem' display='flex'>
-                            Leave this field blank if your vault password is the same as your account password
+                        <Typography variant='subtitle' paddingTop='.5rem' display='flex'>
+                            You'll be asked for your vault password later
                         </Typography>
 
                         <ActionBtnRow>
-                            <Button onclick={() => this.setPg(0)}>Back</Button>
+                            <Button onClick={() => this.setPg(0)}>Back</Button>
                             <FlexFiller />
-                            <Button filled onclick={() => {
+                            <Button filled onClick={() => {
                                 this.setPg(2);
                                 this.handleLogin().then();
-                            }}>Sign In</Button>
+                            }} disabled={this.state.password.length < 5}>Sign In</Button>
                         </ActionBtnRow>
+
+                        <Button onClick={() => this.setPg(0)}>Forgot Password</Button>
                     </>
                     <>
                         <IconSwapperWithProgress

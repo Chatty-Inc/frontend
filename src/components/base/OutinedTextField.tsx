@@ -18,8 +18,12 @@ const StyledContainer = styled.div<IThemeOptions>`
     overflow: hidden;
     
     &:focus {
-      border: 1px solid ${t => Color(t.backgroundColors?.default).lighten(4).toString()};
+      border: 1px solid ${t => t.primary};
       box-shadow: 0 0 0 .25rem ${t => Color(t.primary).alpha(.5).toString()};
+      &:invalid {
+        box-shadow: 0 0 0 .25rem ${t => Color(t.palette?.error).alpha(.5).toString()};
+        border-color: ${t => t.palette?.error}
+      }
     }
   }
 `

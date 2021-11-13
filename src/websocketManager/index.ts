@@ -4,6 +4,7 @@ import debug from '../dev/logger';
 import { IUserInfoData, IWSMsgTypes, IWSReceivedPayload } from './types';
 import constructGatewayMsg from './construct';
 import { handleServerRequests } from './handleServerRequests';
+import SyncedEncryptedStore from '../stores/SyncedEncryptedStore';
 
 /**
  * Manages the whole Gateway WebSocket connection, including
@@ -19,6 +20,7 @@ export class WebSocketManager {
     readonly uuid: string = '';
     readonly gatewayURL: string = '';
     readonly debug: boolean = false;
+    private readonly encryptedStorePW: string;
     // WS object is not readonly since it changes when attempting reconnection
     private ws?: WebSocket = undefined;
     // Reconnection state variables
@@ -33,6 +35,7 @@ export class WebSocketManager {
     private keepaliveID: number | null = null;
     // Stores
     private promises: Record<string, (value: (IWSReceivedPayload | PromiseLike<IWSReceivedPayload>)) => void> = {};
+    encryptedStore?: SyncedEncryptedStore;
     // Static constants
     static STATE_DC_CONNECTING = 0;
     static STATE_CONNECTED = 1;
@@ -44,16 +47,17 @@ export class WebSocketManager {
     static MAX_BACKOFF_DUR = 60000;
     static INITIAL_BACKOFF = 500;
 
-    constructor(reconnectOnFailure: boolean = true) {
+    constructor(reconnectOnFailure: boolean = true, encryptedStorePw: string) {
         this.reconnectOnFail = reconnectOnFailure;
         this.debug = process.env.NODE_ENV === 'development'; // Enable debug
         this.gatewayURL = this.debug ? 'ws://localhost:3000/ws' : ''; // Fill in production gateway URL
+        this.encryptedStorePW = encryptedStorePw;
 
         debug('GatewayManager', 'Attempting Gateway WebSocket connection at ' + this.gatewayURL);
 
         (async () => {
-            try {await fetch(this.gatewayURL.replace('ws', 'http'))}
-            catch{}
+            try {await fetch(this.gatewayURL.replace('ws', 'http'))} // Dumb workaround for broken proxying
+            catch {}
             this.connect();
         })();
     }
@@ -100,6 +104,10 @@ export class WebSocketManager {
                     debug('GatewayManager', 'WS latency: ' + (Number(resp.time) - sentTime) + 'ms');
                 }
             }, 5000) as unknown as number;
+
+            // Init encryptedStore
+            this.encryptedStore = new SyncedEncryptedStore(this, this.encryptedStorePW);
+            // Should be set last since some code might hook on this callback
             this.connState = WebSocketManager.STATE_CONNECTED;
         }
         this.ws.onmessage = msg => this.handleWSMessage(msg);
@@ -138,7 +146,8 @@ export class WebSocketManager {
                 delete this.promises[parsed.tag];
             }
             else { // This is a request
-                await handleServerRequests(parsed.type as IWSMsgTypes, parsed.payload)
+                const handledResp = await handleServerRequests(parsed.type as IWSMsgTypes, parsed.payload);
+                if (handledResp) this.sendWSMessage(parsed.type as IWSMsgTypes, handledResp, parsed.tag);
             }
         }
     }

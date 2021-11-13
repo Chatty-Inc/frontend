@@ -16,6 +16,12 @@ export interface IThemeColors {
     input?: string
 }
 
+export interface IPaletteColors {
+    error: string;
+    success: string;
+    warning: string;
+}
+
 /** Various breakpoints in px */
 export interface IThemeSizes {
     xs: number; // Extra-small
@@ -32,5 +38,6 @@ export interface IThemeOptions {
     backgroundColors?: IThemeColors;
     elevationLevel?: number;
     fontFamily?: string;
+    palette?: Partial<IPaletteColors>;
     sizes?: Partial<IThemeSizes>
 }

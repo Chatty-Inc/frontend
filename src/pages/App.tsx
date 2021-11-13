@@ -5,10 +5,10 @@ import {logout} from '../cryptoBase/auth';
 import {WebSocketManager} from '../websocketManager';
 import Container from '../components/base/Container';
 import Typography from "../components/complex/Typography";
-import SyncedEncryptedStore from "../stores/SyncedEncryptedStore";
-import {RouteComponentProps, withRouter} from 'react-router-dom';
+import {withRouter} from 'react-router-dom';
 import Dialog, { DialogTextContent } from '../components/complex/Dialog';
 import { IUserInfoData } from '../websocketManager/types';
+import { LoginRouterProps } from './Login';
 
 interface AppState {
     wsState: number;
@@ -27,10 +27,10 @@ const humanReadableWSStates = {
 /**
  * Login page
  */
-class App extends Component<RouteComponentProps, AppState> {
+class App extends Component<LoginRouterProps, AppState> {
     static contextType = ThemeCtx;
 
-    constructor(props: RouteComponentProps) {
+    constructor(props: LoginRouterProps) {
         super(props);
 
         this.state = {
@@ -44,15 +44,14 @@ class App extends Component<RouteComponentProps, AppState> {
     }
 
     componentDidMount() {
-        ws = new WebSocketManager(true);
-        ws.onSignedOut = () => this.props.history.push('/login');
+        ws = new WebSocketManager(true, 'abcd');
+        ws.onSignedOut = () => this.props.history.push('/login', {signedOut: true});
         ws.onstatechange = async ns => {
-            this.setState({wsState: ns});
+            this.setState({ wsState: ns });
             if (ns === WebSocketManager.STATE_CONNECTED) {
-                const store = new SyncedEncryptedStore(ws!, 'abcd');
-                try { console.log(await store.getVal('test')) }
+                try { console.log(await ws?.encryptedStore?.getVal('test')) }
                 catch { console.log('Password wrong') }
-                console.log(await store.getVal('doesnotexist'));
+                console.log(await ws?.encryptedStore?.getVal('doesnotexist'));
             }
         }
     }
@@ -64,7 +63,7 @@ class App extends Component<RouteComponentProps, AppState> {
 
             <Container variant='outlined' style={{display: 'flex', maxWidth: 500, margin: 'auto', gap: '.75rem'}}>
                 <div style={{flex: 1}}>
-                    <Button primary='red' fullWidth onclick={() => {
+                    <Button primary='red' fullWidth onClick={() => {
                         if (!ws) return;
                         ws?.destroyConnection();
                         ws = undefined;
@@ -73,7 +72,7 @@ class App extends Component<RouteComponentProps, AppState> {
                 </div>
             </Container>
 
-            <Button onclick={async () => {
+            <Button onClick={async () => {
                 const userData = await ws?.userInfo();
                 if (!userData) return;
                 this.setState({uDataDialog: {open: true, content: userData}})
@@ -83,6 +82,7 @@ class App extends Component<RouteComponentProps, AppState> {
                     onClose={() => this.setState({uDataDialog: {open: false, content: this.state.uDataDialog.content}})}>
                 <DialogTextContent onClose={() => this.setState({uDataDialog: {open: false, content: this.state.uDataDialog.content}})}
                     title='User info for self' content={`UUID: ${this.state.uDataDialog.content.uuid}
+Username: ${this.state.uDataDialog.content.username}
 Handle: ${this.state.uDataDialog.content.handlePortion}#${this.state.uDataDialog.content.tag}
 Account created: ${new Date(this.state.uDataDialog.content.created)}`} />
             </Dialog>

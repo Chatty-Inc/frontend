@@ -101,7 +101,7 @@ export function DialogTextContent({title, content, closeLabel, buttons, onClose}
         <Typography variant='body'>{content}</Typography>
         <StyledButtonRow>
             {buttons}
-            <Button filled onclick={onClose}>{closeLabel ?? 'Close'}</Button>
+            <Button filled onClick={onClose}>{closeLabel ?? 'Close'}</Button>
         </StyledButtonRow>
     </Container>
 }
