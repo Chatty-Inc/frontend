@@ -4,7 +4,7 @@ import { createContext } from "react";
 const defaultTheme: IThemeOptions = {
     theme: 'dark',
     textColors: {default: '#eee', button: '#fff', body: '#ffffffb2', input: '#efefef'},
-    backgroundColors: {default: '#1d2024', filledBtn: '#004a77'},
+    backgroundColors: {default: '#1d2024', filledBtn: '#004a77', themeAccent: '#004a77'},
     primary: '#8ab4f8',
     elevationLevel: 0.025,
     fontFamily: 'IBM Plex Sans',

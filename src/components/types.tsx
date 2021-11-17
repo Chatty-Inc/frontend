@@ -8,6 +8,7 @@ export interface IThemeColors {
     default: string;
     button?: string;
     filledBtn?: string;
+    themeAccent?: string;
     h1?: string;
     h2?: string;
     h3?: string;

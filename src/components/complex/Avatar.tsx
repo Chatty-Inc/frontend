@@ -1,6 +1,5 @@
 import React, {Component} from "react";
 import {ThemeCtx} from "../core/UIThemeProvider";
-import {IThemeOptions} from "../types";
 import styled from "styled-components";
 import {prominent} from 'color.js'
 import {IRGBColor} from "../../utils/color/types";
@@ -78,8 +77,6 @@ export default class Avatar extends Component<AvatarProps, AvatarState> {
     }
 
     render() {
-        const theme: IThemeOptions = this.context;
-
         return <StyledAccentBorder accent={this.state.accent}>
             <StyledAvatarDiv background={`url("${this.props.profileImgURL ?? defaultImg}")`} />
         </StyledAccentBorder>

@@ -146,7 +146,7 @@ export class WebSocketManager {
                 delete this.promises[parsed.tag];
             }
             else { // This is a request
-                const handledResp = await handleServerRequests(parsed.type as IWSMsgTypes, parsed.payload);
+                const handledResp = await handleServerRequests.call(this, parsed.type as IWSMsgTypes, parsed.payload);
                 if (handledResp) this.sendWSMessage(parsed.type as IWSMsgTypes, handledResp, parsed.tag);
             }
         }

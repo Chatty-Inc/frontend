@@ -2,7 +2,7 @@ import { Component, HTMLProps } from 'react';
 import styled from 'styled-components';
 import {ThemeCtx} from '../core/UIThemeProvider';
 import {IThemeOptions} from '../types';
-import Color from '../../utils/vendor/color';
+import Color from '../../utils/vendor/color/color';
 import {getTextColFromBg} from '../core/utils';
 
 interface StyledButtonProps extends IThemeOptions {

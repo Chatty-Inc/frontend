@@ -18,4 +18,8 @@ export function base64ToArray(txt: string): Uint8Array {
     return base64.base64ToBytes(txt);
 }
 
+export function avatarInitialsFromName(name: string): string {
+    return name.split(' ').slice(0, 3).map(v => v.slice(0, 1)).join('');
+}
+
 export { default as emojis } from './emojiLookup';

@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Component, CSSProperties } from 'react';
 import { ThemeCtx } from '../core/UIThemeProvider';
 import { IThemeOptions } from '../types';
-import Color from '../../utils/vendor/color';
+import Color from '../../utils/vendor/color/color';
 
 export interface IProgressRingProps {
     radius: number;

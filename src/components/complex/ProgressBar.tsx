@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { IThemeOptions } from '../types';
-import Color from '../../utils/vendor/color';
+import Color from '../../utils/vendor/color/color';
 import { motion } from 'framer-motion';
 import { useContext } from 'react';
 import { ThemeCtx } from '../core/UIThemeProvider';

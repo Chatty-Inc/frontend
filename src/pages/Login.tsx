@@ -82,7 +82,6 @@ class Login extends Component<LoginRouterProps, LoginState> {
 
         this.handleLogin = this.handleLogin.bind(this);
         this.setPg = this.setPg.bind(this);
-        this.handleFieldInput = this.handleFieldInput.bind(this);
 
         this.pwField = createRef<InputBase>()
     }
@@ -155,17 +154,14 @@ class Login extends Component<LoginRouterProps, LoginState> {
             this.setPg(0);
             return;
         }
-        else {
-            this.props.history.push('/app')
-        }
+        else this.props.history.push('/app');
     }
-
-    handleFieldInput() {}
 
     render() {
         return <Centered>
             <Container variant='outlined'
-                       style={{width: 400, maxWidth: 'calc(100vw - 5rem)', height: 450, margin: '2rem', paddingTop: '1.5rem'}}>
+                       style={{width: 400, maxWidth: 'calc(100vw - 5rem)', height: 450, boxSizing: 'content-box',
+                           margin: '2rem', paddingTop: '1.5rem'}}>
                 <Centered vertical={false}>
                     <img src={chattyIcon} alt='Chatty' style={{width: 64, height: 64, borderRadius: 14}} />
                     <Typography variant='h2' textAlign='center' marginTop='1.5rem' marginBottom='.5rem'>
@@ -175,7 +171,6 @@ class Login extends Component<LoginRouterProps, LoginState> {
                         {loginHeaderContentLookup[this.state.pagerPage][1]}
                     </Typography>
                 </Centered>
-
 
                 <HorizontalPager page={this.state.pagerPage} marginLeft='-1rem' width={432}>
                     <>
@@ -242,7 +237,6 @@ class Login extends Component<LoginRouterProps, LoginState> {
                         </Typography>
                     </>
                 </HorizontalPager>
-
             </Container>
 
             <ReCAPTCHA ref={this.reCaptcha} sitekey={mainConf.reCAPTCHAKey} theme='dark'

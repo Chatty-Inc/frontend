@@ -1,6 +1,7 @@
 import { IKeyUpdatePayload } from '../types';
+import { WebSocketManager } from '../index';
 
-export default async function keyUpdate(payload: IKeyUpdatePayload): Promise<object | null> {
+export default async function keyUpdate(this: WebSocketManager, payload: IKeyUpdatePayload): Promise<object | null> {
     if ('request' in payload && 'user' in payload) {
         if (payload.request === 'sign' && payload.user === 'self') {
             const newSignKey = await window.crypto.subtle.generateKey(
@@ -11,10 +12,15 @@ export default async function keyUpdate(payload: IKeyUpdatePayload): Promise<obj
                 true, //whether the key is extractable (i.e. can be used in exportKey)
                 ['sign', 'verify'] //can be any combination of 'sign' and 'verify'
             );
+            // Save private key to encryptedStore
+            await this.encryptedStore?.setVal('privateSignKey', await window.crypto.subtle.exportKey(
+                'jwk',
+                newSignKey.privateKey!
+            ));
             return window.crypto.subtle.exportKey(
                 'jwk',
                 newSignKey.publicKey!
-            )
+            );
         }
     }
     return null;
