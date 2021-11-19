@@ -4,6 +4,10 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+html, body {
+  background-color: #1e1e21;
+}
+
 .grecaptcha-badge { visibility: hidden; }
 
 * {

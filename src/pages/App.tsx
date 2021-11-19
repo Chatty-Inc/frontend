@@ -6,20 +6,37 @@ import { IUserInfoData } from '../websocketManager/types';
 import { LoginRouterProps } from './Login';
 import AppUISlots from '../components/utility/AppUISlots';
 import ServerList, { IServerItem } from '../components/utility/MainAppComponents/ServerList';
-import ChannelMessages from '../components/utility/MainAppComponents/ChannelMessages';
-import MessageBubble from '../components/message/MessageBubble';
+import ChannelMessages, { IMessageData } from '../components/utility/MainAppComponents/ChannelMessages';
 import ChannelHeader from '../components/utility/MainAppComponents/ChannelHeader';
 import MessageHeader from '../components/utility/MainAppComponents/MessageHeader';
-import ChannelList from '../components/utility/MainAppComponents/ChannelList';
+import ChannelList, { IChannelData } from '../components/utility/MainAppComponents/ChannelList';
 import MessageInput from '../components/utility/MainAppComponents/MessageInput';
+import genConversation from '../utils/genConversation';
 
 interface AppState {
     wsState: number;
     uDataDialog: { open: boolean, content: IUserInfoData };
-    servers: IServerItem[]
+    servers: IServerItem[];
+    messages: IMessageData[];
+    channels: IChannelData[];
 }
 
 let ws: WebSocketManager | undefined = undefined;
+
+const channelNameChoices = [
+    'a-random-channel',
+    'funny-channel',
+    'private-talk',
+    'staff-only',
+    'general',
+    'moderator-only',
+    'announcements',
+    'general-chat',
+    'suggestions',
+    'bug-reporting',
+    'system-messages',
+    'partnered-servers-cuz-wynaut'
+]
 
 /**
  * Login page
@@ -40,7 +57,14 @@ class App extends Component<LoginRouterProps, AppState> {
                     avatarURL: `https://picsum.photos/48.webp?random=${i}`,
                     guid: `dummyGUID${i}`
                 }
-            })
+            }),
+            messages: genConversation(100),
+            channels: new Array(50).fill(null).map((_, i) => {
+                return {
+                    name: channelNameChoices[Math.floor(Math.random() * channelNameChoices.length)],
+                    id: i.toString() + Math.floor(Math.random() * 1000)
+                }
+            }),
         }
     }
 
@@ -67,13 +91,9 @@ class App extends Component<LoginRouterProps, AppState> {
         return <AppUISlots
             serverList={<ServerList servers={this.state.servers} onServerClicked={console.log} />}
             channelHeader={<ChannelHeader serverName='A funny server' />}
-            channelList={<ChannelList />}
+            channelList={<ChannelList channels={this.state.channels} />}
             messageHeader={<MessageHeader channelName='staff-only' channelPrivate={true} />}
-            messageHistory={<ChannelMessages totalMessages={50} channelName='staff-only'>
-                {
-                    i => <MessageBubble content={`Funny content ${i}`} />
-                }
-            </ChannelMessages>}
+            messageHistory={<ChannelMessages channelName='staff-only' messages={this.state.messages} />}
             messageInput={<MessageInput />}
         />
     }

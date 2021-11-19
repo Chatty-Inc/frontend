@@ -21,6 +21,7 @@ export interface IServerAvatarProps extends Omit<HTMLProps<HTMLDivElement>, 'ref
     imgURL?: string;
     name: string;
     customAccentBg?: string;
+    unread: boolean;
 }
 
 const StyledAvatar = styled.div<{avatarURL?: string, baseBg?: string, accentBg?: string}>`
@@ -90,7 +91,7 @@ export function ServerAvatar(props: IServerAvatarProps) {
         <div style={{display: 'flex', alignItems: 'center', position: 'absolute', top: 0, left: -4, bottom: 8, ...props.style}}>
             <motion.div
                 style={{backgroundColor: '#fff', borderRadius: 4, width: 8}}
-                animate={{height: isHovered ? 20 : 8}}
+                animate={{height: isHovered || !props.unread ? 20 : 8, scale: props.unread || isHovered ? 1 : 0}}
             />
         </div>
 
@@ -114,18 +115,21 @@ export default function ServerList(props: IServerListProps) {
     return <StyledServerListContainer baseBg={backgroundColors?.default}>
         <RecyclerView fallbackHeight={56} childrenCount={props.servers.length + 2}>
             {index => index !== 0 && index !== props.servers.length + 1 ?
-                <ServerAvatar name={props.servers[index - 1].name}
+                <ServerAvatar name={props.servers[index - 1].name} unread={true}
                               onClick={() => props.onServerClicked(props.servers[index - 1].guid)}
                               imgURL={props.servers[index - 1].avatarURL} />
                 : (
                     index === 0
                         ? <>
-                            <ServerAvatar name='Friends & DMs' style={{marginTop: '.5rem'}}
+                            <ServerAvatar name='Friends & DMs' style={{marginTop: '.5rem'}} unread={false}
                                           onClick={() => props.onServerClicked('home')} imgURL={chattyIcon}
                             />
                             <Divider style={{marginBottom: '.5rem'}} />
                         </>
-                        : <ServerAvatar name='Add Server' customAccentBg='green' />
+                        : <>
+                            <Divider style={{marginBottom: '.5rem'}} />
+                            <ServerAvatar name='Add Server' customAccentBg='#4caf50' unread={false} />
+                        </>
                 )
             }
         </RecyclerView>

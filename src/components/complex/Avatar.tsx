@@ -1,4 +1,4 @@
-import React, {Component} from "react";
+import React, { Component } from 'react';
 import {ThemeCtx} from "../core/UIThemeProvider";
 import styled from "styled-components";
 import {prominent} from 'color.js'
@@ -29,10 +29,12 @@ const StyledAvatarDiv = styled.div<StyledAvatarProps>`
   border-radius: 50%;
 `
 const StyledAccentBorder = styled.div<{accent: string}>`
+  height: fit-content;
+  width: fit-content;
   padding: 2px;
+  
   border: 2px solid ${p => p.accent};
   border-radius: 50%;
-  width: fit-content;
   transition: border .25s ease;
 `
 
@@ -43,6 +45,7 @@ const StyledAccentBorder = styled.div<{accent: string}>`
  */
 export default class Avatar extends Component<AvatarProps, AvatarState> {
     static contextType = ThemeCtx;
+    private _isMounted: boolean = false;
 
     constructor(props: AvatarProps | Readonly<AvatarProps>) {
         super(props);
@@ -54,8 +57,9 @@ export default class Avatar extends Component<AvatarProps, AvatarState> {
     }
 
     updateColorRing() {
-        prominent(this.props.profileImgURL ?? defaultImg, { amount: 5, format: 'rgb' })
+        prominent(this.props.profileImgURL ?? defaultImg, { amount: 10, format: 'rgb' })
             .then(c => {
+                if (!this._isMounted) return;
                 if (typeof c !== 'string') {
                     const cols: IRGBColor[] = c.map(v => {
                         const [r, g, b] = v as [r: number, g: number, b: number];
@@ -65,11 +69,16 @@ export default class Avatar extends Component<AvatarProps, AvatarState> {
                     this.setState({ accent: `rgb(${vibrantCol.r}, ${vibrantCol.g}, ${vibrantCol.b})` })
                 }
             })
-            .catch(() => {}) // Swallow error silently
+            .catch(() => {}); // Swallow error silently
     }
 
     componentDidMount() {
+        this._isMounted = true;
         this.updateColorRing();
+    }
+
+    componentWillUnmount() {
+        this._isMounted = false;
     }
 
     componentDidUpdate(prevProps: Readonly<AvatarProps>, prevState: Readonly<AvatarState>, snapshot?: any) {

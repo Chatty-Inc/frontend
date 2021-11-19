@@ -1,29 +1,36 @@
-import { Component, ReactChild, ReactElement } from 'react';
+import { Component } from 'react';
 import styled from 'styled-components';
 import { IThemeOptions } from '../../types';
 import Icon from '@ailibs/feather-react-ts'
 import Typography from '../../complex/Typography';
 import { ThemeCtx } from '../../core/UIThemeProvider';
 import Color from '../../../utils/vendor/color/color';
+import MessageBubble from '../../message/MessageBubble';
 
+export interface IMessageData {
+    avatarURL?: string;
+    name: string;
+    sentTime: number;
+    msgContent: string;
+    msgType: 'text';
+    msgId: string;
+}
 export interface IChannelMessagesProps {
-    children: (index: number) => ReactChild | ReactElement | ReactChild[] | ReactElement[];
-    totalMessages: number;
     channelName: string;
+    messages: IMessageData[];
 }
 
 const StyledMessageContainer = styled.div<IThemeOptions>`
   background-color: transparent;
-  padding: 5rem 1rem 1rem;
+  padding: 5rem 1rem 2rem;
   
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  gap: .25rem;
   
-  & div:first-child {
-    margin-top: 0
-  }
-`;
+  & div:first-child { margin-top: 0; }
+`
 
 const CustomMsgHolder = styled.div<{baseBg?: string}>`
   grid-area: msgHistory;
@@ -42,7 +49,7 @@ const CustomMsgHolder = styled.div<{baseBg?: string}>`
   }
   &::-webkit-scrollbar-thumb {
     background-color: ${p => Color(p.baseBg).lighten(1).toString()};
-    min-height: 2.5rem;
+    min-height: 3rem;
   }
   &::-webkit-scrollbar-thumb, &::-webkit-scrollbar-track {
     border: 4px solid transparent;
@@ -66,7 +73,9 @@ export default class ChannelMessages extends Component<IChannelMessagesProps, {}
             <Typography variant='h1' margin={0}>{this.props.channelName}</Typography>
             <Typography variant='body'>This channel was created by </Typography>
             {
-                new Array(this.props.totalMessages).fill(null).map((_, i) => this.props.children(i))
+                this.props.messages.map((msg, idx) =>
+                    <MessageBubble {...msg}  key={msg.msgId} jointMessage={msg.name === this.props.messages[idx - 1]?.name} />
+                )
             }
         </StyledMessageContainer></CustomMsgHolder>
     }

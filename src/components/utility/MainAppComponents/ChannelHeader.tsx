@@ -41,7 +41,7 @@ export const StyledHeader = styled.div<{bgCol?: string, lightenRatio: number}>`
 export default function ChannelHeader({serverName}: {serverName: string}) {
     const theme = useContext(ThemeCtx);
 
-    return <StyledHeader bgCol={theme.backgroundColors?.default} lightenRatio={.2}>
+    return <StyledHeader bgCol={theme.backgroundColors?.default} lightenRatio={0}>
         <Typography variant='h3' margin={0}>{serverName}</Typography>
     </StyledHeader>
 }

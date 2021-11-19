@@ -39,7 +39,7 @@ export default class AppUISlots extends Component<IAppUISlotsProps, {}> {
         return <StyledSlotContainer>
             <StyledSlotChild style={{gridArea: 'serverList'}}>{this.props.serverList}</StyledSlotChild>
             <StyledSlotChild style={{gridArea: 'chHeader'}}>{this.props.channelHeader}</StyledSlotChild>
-            <StyledSlotChild style={{gridArea: 'chList'}}>{this.props.channelList}</StyledSlotChild>
+            {this.props.channelList}
             <StyledSlotChild style={{gridArea: 'msgHeader'}}>{this.props.messageHeader}</StyledSlotChild>
             {this.props.messageHistory}
             <StyledSlotChild style={{gridArea: 'msgInput'}}>{this.props.messageInput}</StyledSlotChild>
